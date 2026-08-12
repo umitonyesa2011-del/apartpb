@@ -142,7 +142,7 @@
         '<div class="apt__media" data-slider>' +
           '<span class="apt__badge" style="background:linear-gradient(100deg,' + c[0] + ',' + c[1] + ')">' + a.badge + '</span>' +
           slides + dots +
-          '<span class="apt__price">' + money(a.price) + ' <small>/ сутки</small></span>' +
+          '<span class="apt__price">' + (a.priceFrom ? 'от ' : '') + money(a.price) + ' <small>/ сутки</small></span>' +
         '</div>' +
         '<div class="apt__body">' +
           '<h3 class="apt__title">' + a.title + '</h3>' +
