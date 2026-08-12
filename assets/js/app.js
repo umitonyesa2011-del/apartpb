@@ -67,7 +67,7 @@
         '</text>' +
         '<text x="400" y="456" text-anchor="middle" fill="#ffffff" fill-opacity=".55" ' +
           'font-family="Manrope,Arial,sans-serif" font-size="20" font-weight="600">' +
-          'фото ' + (i + 1) + ' — добавьте в папку images/' +
+          'фотографии — в объявлении на Avito' +
         '</text>' +
       '</svg>';
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
