@@ -1,4 +1,8 @@
-name: Публикация сайта на GitHub Pages
+name: Публикация сайта
+
+# Сайт отдаётся с ветки gh-pages. Этот workflow держит её в актуальном
+# состоянии: любой пуш в main переносится в gh-pages, и GitHub Pages
+# пересобирает сайт автоматически.
 
 on:
   push:
@@ -6,31 +10,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: publish
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-
-      # включает GitHub Pages в настройках репозитория, если он ещё не включён
-      - uses: actions/configure-pages@v5
         with:
-          enablement: true
+          fetch-depth: 0
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Перенести main в gh-pages
+        run: git push --force origin HEAD:gh-pages
