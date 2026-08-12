@@ -90,8 +90,8 @@
     var items = [
       [STATS.years, 'года на рынке аренды'],
       [STATS.apartments, 'квартир в управлении'],
-      [STATS.guests, 'довольных гостей'],
-      [STATS.rating, 'средняя оценка гостей']
+      [STATS.commission, 'комиссия за бронь'],
+      [STATS.checkin, 'заселение в любое время']
     ];
     $('#stats').innerHTML = items.map(function (it) {
       return '<div class="stat reveal"><b class="grad">' + it[0] + '</b><span>' + it[1] + '</span></div>';
@@ -127,9 +127,10 @@
       var c = ACCENTS[a.accent] || ACCENTS.violet;
       var photos = (a.photos && a.photos.length ? a.photos : ['']);
       var slides = photos.map(function (p, i) {
+        var base = p ? p.replace(/\.[a-z0-9]+$/i, '') : '';
         var src = p ? 'images/' + p : placeholder(a, i);
         return '<img src="' + src + '" alt="' + a.title + ' — фото ' + (i + 1) + '" ' +
-               'loading="lazy" data-ph="' + placeholder(a, i) + '" ' +
+               'loading="lazy" data-base="' + base + '" data-ph="' + placeholder(a, i) + '" ' +
                'style="' + (i ? 'display:none' : '') + '">';
       }).join('');
       var dots = photos.length > 1
@@ -162,12 +163,23 @@
     }).join('');
 
     /* если настоящего фото ещё нет — подставляем нарисованную заглушку */
+    /* Файла с таким расширением может не быть — пробуем остальные,
+       и только потом показываем нарисованную заглушку. */
+    var EXT = ['.jpg', '.jpeg', '.png', '.webp', '.JPG', '.PNG'];
+
     $$('#aptGrid img').forEach(function (img) {
-      var fallback = function () {
+      var base = (img.dataset.base || '');
+      var tried = 0;
+      var next = function () {
+        if (!base) { img.src = img.dataset.ph; return; }
+        while (tried < EXT.length) {
+          var candidate = 'images/' + base + EXT[tried++];
+          if (img.getAttribute('src') !== candidate) { img.src = candidate; return; }
+        }
         if (img.src !== img.dataset.ph) img.src = img.dataset.ph;
       };
-      img.addEventListener('error', fallback);
-      if (img.complete && img.naturalWidth === 0) fallback();   // ошибка успела произойти раньше
+      img.addEventListener('error', next);
+      if (img.complete && img.naturalWidth === 0) next();   // ошибка успела произойти раньше
     });
 
     /* мини-слайдер: клик по фото листает, двойной — открывает лайтбокс */
@@ -454,18 +466,7 @@
     });
   }
 
-  /* ─── отзывы и вопросы ───────────────────────────────────────────── */
-  function initReviews() {
-    $('#revGrid').innerHTML = REVIEWS.map(function (r) {
-      return '<article class="rev reveal">' +
-        '<div class="rev__stars">' + '★'.repeat(r.stars) + '</div>' +
-        '<p class="rev__text">«' + r.text + '»</p>' +
-        '<div class="rev__who"><div class="rev__ava">' + r.name.charAt(0) + '</div>' +
-        '<div><div class="rev__name">' + r.name + '</div><div class="rev__date">' + r.date + '</div></div></div>' +
-      '</article>';
-    }).join('');
-  }
-
+  /* ─── вопросы и ответы ────────────────────────────────────────────── */
   function initFaq() {
     $('#faqList').innerHTML = FAQ.map(function (f) {
       return '<div class="faq__item reveal"><button class="faq__q" type="button">' +
@@ -613,7 +614,6 @@
   initStats();
   initAdvantages();
   initApartments();
-  initReviews();
   initFaq();
   initCalendar();
   initForm();
