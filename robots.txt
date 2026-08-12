@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://umitonyesa2011-del.github.io/apartpb/sitemap.xml

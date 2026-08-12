@@ -518,6 +518,96 @@
     }
   }
 
+  /* ─── микроразметка для поисковиков (Schema.org) ─────────────────── */
+  function initSeo() {
+    var base = location.origin + location.pathname.replace(/index\.html$/, '');
+
+    var org = {
+      '@context': 'https://schema.org',
+      '@type': 'LodgingBusiness',
+      name: 'КвартирыСПб — квартиры посуточно от собственника',
+      description: 'Посуточная аренда квартир в Санкт-Петербурге от собственника, без комиссии и посредников.',
+      url: base,
+      telephone: CONTACTS.phoneHref.replace('tel:', ''),
+      priceRange: Math.min.apply(null, APARTMENTS.map(function (a) { return a.price; })) + '–' +
+                  Math.max.apply(null, APARTMENTS.map(function (a) { return a.price; })) + ' RUB',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Санкт-Петербург',
+        addressCountry: 'RU'
+      },
+      areaServed: { '@type': 'City', name: 'Санкт-Петербург' },
+      openingHours: 'Mo-Su 00:00-23:59'
+      // Рейтинг (aggregateRating) сюда добавляем только с реальными отзывами:
+      // размечать выдуманные оценки запрещено правилами Google и Яндекса.
+    };
+
+    var list = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: APARTMENTS.map(function (a, i) {
+        return {
+          '@type': 'ListItem',
+          position: i + 1,
+          item: {
+            '@type': 'Apartment',
+            name: a.title,
+            description: a.about,
+            numberOfRooms: a.rooms,
+            occupancy: { '@type': 'QuantitativeValue', maxValue: a.guests },
+            floorSize: { '@type': 'QuantitativeValue', value: a.area, unitCode: 'MTK' },
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: a.district || CONTACTS.city,
+              addressCountry: 'RU'
+            },
+            amenityFeature: a.features.map(function (f) {
+              return { '@type': 'LocationFeatureSpecification', name: f, value: true };
+            }),
+            potentialAction: {
+              '@type': 'ReserveAction',
+              target: base + '#calendar',
+              result: { '@type': 'LodgingReservation', name: 'Бронирование ' + a.title }
+            },
+            offers: {
+              '@type': 'Offer',
+              price: a.price,
+              priceCurrency: 'RUB',
+              availability: 'https://schema.org/InStock',
+              url: base + '#calendar',
+              priceSpecification: {
+                '@type': 'UnitPriceSpecification',
+                price: a.price,
+                priceCurrency: 'RUB',
+                unitCode: 'DAY',
+                unitText: 'сутки'
+              }
+            }
+          }
+        };
+      })
+    };
+
+    var faq = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(function (f) {
+        return {
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a }
+        };
+      })
+    };
+
+    [org, list, faq].forEach(function (obj) {
+      var s = document.createElement('script');
+      s.type = 'application/ld+json';
+      s.textContent = JSON.stringify(obj);
+      document.head.appendChild(s);
+    });
+  }
+
   /* ─── старт ──────────────────────────────────────────────────────── */
   initContacts();
   initStats();
@@ -529,4 +619,5 @@
   initForm();
   initLightbox();
   initUI();
+  initSeo();
 })();

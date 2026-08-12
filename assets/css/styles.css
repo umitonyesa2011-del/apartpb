@@ -312,6 +312,10 @@ p{ margin:0; }
 
 .form{ display:grid; gap:14px; }
 .form[hidden], .lb[hidden]{ display:none; }
+
+/* список-запасной вариант без JavaScript */
+.plain-list{ list-style:none; padding:0; margin:0 0 18px; display:grid; gap:10px; }
+.plain-list a{ color:#c8cdf0; text-decoration:underline; font-size:15.5px; }
 .field{ display:grid; gap:7px; }
 .field span{ font-size:13px; font-weight:700; color:var(--muted); }
 .field input, .field textarea{
