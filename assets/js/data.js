@@ -18,7 +18,7 @@ const CONTACTS = {
 
 const STATS = {
   years: '1+',
-  apartments: '5',
+  reply: '15 мин',
   commission: '0 ₽',
   checkin: '24/7'
 };
