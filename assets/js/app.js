@@ -7,12 +7,14 @@
   var $  = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
 
+  /* Тёплые землистые тона: у каждой квартиры свой оттенок,
+     но все они из одной песочной гаммы. */
   var ACCENTS = {
-    violet: ['#7c5cff', '#a78bfa'],
-    sky:    ['#38bdf8', '#818cf8'],
-    teal:   ['#2dd4bf', '#34d399'],
-    amber:  ['#fbbf24', '#fb923c'],
-    rose:   ['#fb7185', '#f0abfc']
+    violet: ['#B4552F', '#D08A5A'],   /* терракота    */
+    sky:    ['#A9744A', '#C79A6D'],   /* охра         */
+    teal:   ['#6E8A5F', '#96AE7F'],   /* шалфей       */
+    amber:  ['#C08A2E', '#DFB264'],   /* мёд          */
+    rose:   ['#A85E5E', '#C98D84']    /* пыльная роза */
   };
 
   var MONTHS = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
@@ -51,21 +53,21 @@
             '<stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/>' +
           '</linearGradient>' +
         '</defs>' +
-        '<rect width="800" height="600" fill="#101428"/>' +
-        '<rect width="800" height="600" fill="url(#g)" opacity=".28"/>' +
+        '<rect width="800" height="600" fill="#EFE6D8"/>' +
+        '<rect width="800" height="600" fill="url(#g)" opacity=".22"/>' +
         '<g fill="none" stroke="url(#g)" stroke-width="3" opacity=".85">' +
           '<path d="M-20 380 C 180 300, 300 470, 480 390 S 720 300, 840 360"/>' +
           '<path d="M-20 450 C 200 380, 320 530, 520 450 S 740 380, 840 430" opacity=".6"/>' +
         '</g>' +
-        '<g transform="translate(400 268)" fill="none" stroke="#fff" stroke-opacity=".92" ' +
+        '<g transform="translate(400 268)" fill="none" stroke="#3A2C22" stroke-opacity=".55" ' +
           'stroke-width="9" stroke-linejoin="round" stroke-linecap="round">' +
           '<path d="M-70 4 L0 -56 L70 4"/><path d="M-52 -4 V62 H52 V-4"/><path d="M-14 62 V22 H14 V62"/>' +
         '</g>' +
-        '<text x="400" y="416" text-anchor="middle" fill="#ffffff" fill-opacity=".95" ' +
+        '<text x="400" y="416" text-anchor="middle" fill="#3A2C22" fill-opacity=".85" ' +
           'font-family="Manrope,Arial,sans-serif" font-size="34" font-weight="700">' +
           apt.area + ' м² · ' + apt.beds +
         '</text>' +
-        '<text x="400" y="456" text-anchor="middle" fill="#ffffff" fill-opacity=".55" ' +
+        '<text x="400" y="456" text-anchor="middle" fill="#6B5B4B" fill-opacity=".8" ' +
           'font-family="Manrope,Arial,sans-serif" font-size="20" font-weight="600">' +
           'фотографии — в объявлении на Avito' +
         '</text>' +
