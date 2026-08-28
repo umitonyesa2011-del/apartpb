@@ -1,0 +1,6 @@
+# пользовательский контент чата — в репозиторий не попадает
+server/data/
+server/uploads/*
+!server/uploads/.gitkeep
+parser/cache/
+__pycache__/

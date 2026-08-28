@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ремонт дорог Санкт-Петербурга — карта госзакупок</title>
+<meta name="description" content="Карта дорожных ремонтов Санкт-Петербурга по данным госзакупок: подрядчик, сроки, описание работ и чат с фотоотчётами жителей по каждому объекту.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚧</text></svg>">
+</head>
+<body>
+
+<!-- ─────────────  ШАПКА  ───────────── -->
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="logo" href="./">
+      <span class="logo__mark">🚧</span>
+      <span class="logo__text">Дороги<b>СПб</b></span>
+    </a>
+
+    <div class="topbar__stats" id="topStats"></div>
+
+    <div class="topbar__side">
+      <span class="mode" id="modeBadge" title="Режим хранения чатов">…</span>
+      <button class="btn btn--ghost btn--sm" id="toggleList" type="button">Список</button>
+    </div>
+  </div>
+  <div class="databar" id="dataBar" hidden></div>
+</header>
+
+<!-- ─────────────  ОСНОВНОЙ ЭКРАН  ───────────── -->
+<main class="layout">
+
+  <!-- Панель со списком объектов -->
+  <aside class="side" id="side">
+    <div class="side__head">
+      <label class="search">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M10 4a6 6 0 1 0 3.5 10.9l4.8 4.8 1.4-1.4-4.8-4.8A6 6 0 0 0 10 4m0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8"/></svg>
+        <input type="search" id="search" placeholder="Улица, подрядчик, номер закупки" autocomplete="off">
+      </label>
+
+      <div class="chips" id="statusChips">
+        <button class="chip is-active" data-status="all" type="button">Все</button>
+        <button class="chip chip--progress" data-status="in_progress" type="button">Идёт ремонт</button>
+        <button class="chip chip--planned" data-status="planned" type="button">Запланирован</button>
+        <button class="chip chip--done" data-status="done" type="button">Завершён</button>
+      </div>
+
+      <div class="selects">
+        <select id="districtFilter" aria-label="Район"><option value="all">Все районы</option></select>
+        <select id="sortBy" aria-label="Сортировка">
+          <option value="date">Сначала новые</option>
+          <option value="price">По сумме контракта</option>
+          <option value="street">По названию улицы</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="side__count" id="resultCount"></div>
+    <div class="side__list" id="list"></div>
+  </aside>
+
+  <!-- Карта -->
+  <div class="mapwrap">
+    <div id="map"></div>
+    <div class="legend">
+      <span><i class="dot dot--progress"></i>Идёт ремонт</span>
+      <span><i class="dot dot--planned"></i>Запланирован</span>
+      <span><i class="dot dot--done"></i>Завершён</span>
+    </div>
+  </div>
+
+  <!-- Карточка объекта -->
+  <section class="panel" id="panel" aria-hidden="true">
+    <button class="panel__close" id="panelClose" type="button" aria-label="Закрыть">✕</button>
+
+    <div class="panel__head">
+      <span class="badge" id="pStatus"></span>
+      <h2 id="pTitle"></h2>
+      <p class="panel__sub" id="pSub"></p>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-tab="info" type="button" role="tab">Информация</button>
+      <button class="tab" data-tab="chat" type="button" role="tab">Чат <span class="tab__count" id="chatCount">0</span></button>
+    </div>
+
+    <!-- вкладка «Информация» -->
+    <div class="panel__body" id="tabInfo">
+      <dl class="facts" id="pFacts"></dl>
+      <div class="timeline" id="pTimeline"></div>
+      <h3 class="h3">Описание работ</h3>
+      <p class="panel__text" id="pDesc"></p>
+      <a class="btn btn--ghost btn--full" id="pSource" target="_blank" rel="noopener">Карточка закупки в ЕИС</a>
+    </div>
+
+    <!-- вкладка «Чат» -->
+    <div class="panel__body panel__body--chat" id="tabChat" hidden>
+      <div class="chat" id="chat"></div>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <div class="composer__row">
+          <input type="text" id="author" class="composer__author" placeholder="Ваше имя" maxlength="40">
+          <label class="composer__file" title="Прикрепить фото">
+            <input type="file" id="photo" accept="image/*" hidden>
+            <svg viewBox="0 0 24 24" class="ico"><path d="M9 4h6l1.2 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.8zm3 4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9m0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5"/></svg>
+          </label>
+        </div>
+        <div class="composer__preview" id="preview" hidden>
+          <img id="previewImg" alt="Превью фото">
+          <button type="button" id="previewDrop" aria-label="Убрать фото">✕</button>
+        </div>
+        <div class="composer__row">
+          <textarea id="text" rows="1" maxlength="1000" placeholder="Как идут работы? Опишите, что видите"></textarea>
+          <button class="btn btn--send" type="submit" id="sendBtn" aria-label="Отправить">
+            <svg viewBox="0 0 24 24" class="ico"><path d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z"/></svg>
+          </button>
+        </div>
+        <p class="composer__hint">Фото сжимается в браузере до 1600 px. Публикуя сообщение, не указывайте личные данные.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<!-- лайтбокс для фото -->
+<div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt=""></div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
