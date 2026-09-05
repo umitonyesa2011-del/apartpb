@@ -48,7 +48,9 @@
       var cat = PRICES[i];
       list.innerHTML = cat.items.map(function (it) {
         return '<div class="priceRow" data-name="' + it.name.replace(/"/g, '&quot;') + '" data-price="' + it.price + '">' +
-          '<span class="priceRow__name">' + it.name + '</span>' +
+          '<span class="priceRow__name">' + it.name +
+            (it.duration ? '<span class="priceRow__duration">' + it.duration + '</span>' : '') +
+          '</span>' +
           '<span class="priceRow__dots"></span>' +
           '<span class="priceRow__price">' + fmt(it.price) + '</span>' +
           '<button type="button" class="btn btn--ghost priceRow__pick">Выбрать</button>' +
@@ -80,7 +82,7 @@
         opts.push('<optgroup label="' + cat.category + '">');
         cat.items.forEach(function (it) {
           opts.push('<option value="' + it.name.replace(/"/g, '&quot;') + '" data-price="' + it.price + '">' +
-            it.name + ' — ' + fmt(it.price) + '</option>');
+            it.name + ' — ' + fmt(it.price) + (it.duration ? ' (' + it.duration + ')' : '') + '</option>');
         });
         opts.push('</optgroup>');
       });

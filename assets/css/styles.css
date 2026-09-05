@@ -142,6 +142,7 @@ ul, ol { padding-left: 1.2em; color: var(--muted); }
 .priceList { display: flex; flex-direction: column; gap: 2px; }
 .priceRow { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
 .priceRow__name { font-weight: 600; }
+.priceRow__duration { display: inline-block; margin-left: 10px; font-weight: 600; font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
 .priceRow__dots { flex: 1; border-bottom: 1px dashed var(--line); margin-bottom: 5px; }
 .priceRow__price { color: var(--gold); font-weight: 800; font-size: 16px; white-space: nowrap; }
 
