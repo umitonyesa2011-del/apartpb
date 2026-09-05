@@ -12,6 +12,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
 </head>
 <body>
+<noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>
 
 <!-- ─────────────  ШАПКА  ───────────── -->
 <header class="header" id="header">
@@ -81,19 +82,18 @@
 <!-- ─────────────  ПРЕИМУЩЕСТВА  ───────────── -->
 <section class="section" id="advantages">
   <div class="wrap">
-    <div class="shead">
+    <div class="shead reveal">
       <span class="shead__kicker">Почему The Cult</span>
-      <h2 class="shead__title">Барбершоп <span class="grad">одного мастера</span></h2>
       <p class="shead__text">Никакой конвейерной работы — каждая стрижка делается лично, с разбором формы лица, структуры волос и ваших пожеланий.</p>
     </div>
-    <div class="grid grid--3" id="advGrid"></div>
+    <div class="featureList" id="advGrid"></div>
   </div>
 </section>
 
 <!-- ─────────────  МАСТЕР  ───────────── -->
 <section class="section section--alt" id="master">
   <div class="wrap">
-    <div class="master">
+    <div class="master reveal">
       <div class="master__photo">
         <img src="images/barber.jpg" alt="Барбер The Cult" onerror="this.style.display='none'; this.parentElement.classList.add('master__photo--empty')">
       </div>
@@ -111,27 +111,27 @@
 <!-- ─────────────  УСЛУГИ И ЦЕНЫ  ───────────── -->
 <section class="section" id="prices">
   <div class="wrap">
-    <div class="shead">
+    <div class="shead reveal">
       <span class="shead__kicker">Прайс-лист</span>
       <h2 class="shead__title">Услуги <span class="grad">и цены</span></h2>
       <p class="shead__text">Выберите услугу — она автоматически подставится в форму записи ниже.</p>
     </div>
-    <div class="priceTabs" id="priceTabs"></div>
-    <div class="priceList" id="priceList"></div>
+    <div class="priceTabs reveal" id="priceTabs"></div>
+    <div class="priceList reveal" id="priceList"></div>
   </div>
 </section>
 
 <!-- ─────────────  ЗАПИСЬ  ───────────── -->
 <section class="section section--alt" id="booking">
   <div class="wrap">
-    <div class="shead">
+    <div class="shead reveal">
       <span class="shead__kicker">Онлайн-запись</span>
       <h2 class="shead__title">Записаться <span class="grad">на стрижку</span></h2>
       <p class="shead__text">Оставьте заявку — она в один клик уйдёт мастеру на номер <span id="phoneInline"></span> по СМС или звонком.</p>
     </div>
 
     <div class="booking">
-      <aside class="booking__form card">
+      <aside class="booking__form card reveal">
         <h3 class="booking__h">Заявка на запись</h3>
 
         <form id="bookForm" class="form" novalidate>
@@ -167,7 +167,7 @@
         </div>
       </aside>
 
-      <div class="booking__info card">
+      <div class="booking__info card reveal">
         <h3 class="booking__h">Как проходит запись</h3>
         <ol class="steps">
           <li><b>Выберите услугу</b> — из прайса выше или прямо в форме.</li>
@@ -189,7 +189,7 @@
 <!-- ─────────────  АДРЕС / КОНТАКТЫ  ───────────── -->
 <section class="section contacts" id="address">
   <div class="wrap">
-    <div class="cta card">
+    <div class="cta card reveal">
       <div class="cta__lines"></div>
       <div class="cta__in">
         <span class="shead__kicker">Где мы находимся</span>
@@ -202,7 +202,7 @@
         </div>
       </div>
     </div>
-    <div class="map card">
+    <div class="map card reveal">
       <iframe
         src="https://yandex.ru/map-widget/v1/?text=Санкт-Петербург%2C%20проспект%20Медиков%2C%2010%20к1&z=16"
         width="100%" height="360" frameborder="0" loading="lazy" title="Карта — проспект Медиков, 10 к1">

@@ -5,6 +5,35 @@
   function $$(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
   function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
 
+  /* ---------- линейные иконки (единый стиль с шапкой/hero) ---------- */
+  var ICONS = {
+    scissors: '<path d="M6.3 9.3a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6.3 18.7a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM20 5 7.7 17.3M13.6 13.6 20 20M7.7 7.7 11 11"/>',
+    razor: '<path d="M4 20 13.5 10.5M13.5 10.5 20 4l1 1-6.5 6.5M13.5 10.5l3 3M9 15l-5 5"/>',
+    drop: '<path d="M12 3.5s6 6.8 6 11a6 6 0 1 1-12 0c0-4.2 6-11 6-11Z"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/>',
+    pin: '<path d="M12 21s7-7.4 7-12.2A7 7 0 1 0 5 8.8C5 13.6 12 21 12 21Z"/><circle cx="12" cy="8.8" r="2.4"/>'
+  };
+
+  /* ---------- появление секций при прокрутке ---------- */
+  function initReveal() {
+    var els = $$('.reveal');
+    if (!els.length) return;
+    if (!('IntersectionObserver' in window)) return;
+    els.forEach(function (el, i) {
+      el.style.transitionDelay = (i % 3) * 70 + 'ms';
+    });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .15, rootMargin: '0px 0px -8% 0px' });
+    els.forEach(function (el) { io.observe(el); });
+  }
+
   /* ---------- контакты во всех местах страницы ---------- */
   function fillContacts() {
     $$('#headerPhone span, #bigPhone').forEach(function (el) { el.textContent = CONTACTS.phone; });
@@ -24,13 +53,12 @@
 
   /* ---------- преимущества ---------- */
   function renderAdvantages() {
-    var grid = $('#advGrid');
-    if (!grid) return;
-    grid.innerHTML = ADVANTAGES.map(function (a) {
-      return '<div class="card advCard">' +
-        '<div class="advCard__icon">' + a.icon + '</div>' +
-        '<h3>' + a.title + '</h3>' +
-        '<p>' + a.text + '</p>' +
+    var list = $('#advGrid');
+    if (!list) return;
+    list.innerHTML = ADVANTAGES.map(function (a) {
+      return '<div class="featureItem reveal">' +
+        '<div class="featureItem__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[a.icon] || '') + '</svg></div>' +
+        '<div class="featureItem__body"><h3>' + a.title + '</h3><p>' + a.text + '</p></div>' +
         '</div>';
     }).join('');
   }
@@ -171,5 +199,6 @@
     renderPrices();
     initBooking();
     initNav();
+    initReveal();
   });
 })();

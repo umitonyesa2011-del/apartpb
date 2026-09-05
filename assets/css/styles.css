@@ -18,6 +18,13 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+
+/* ---------- плавное появление секций при прокрутке ---------- */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.16,.8,.24,1); }
+.reveal.is-visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -120,13 +127,18 @@ ul, ol { padding-left: 1.2em; color: var(--muted); }
 .shead__title { font-size: clamp(30px, 4vw, 44px); margin-top: 10px; }
 .shead__text { font-size: 16px; }
 
-.grid { display: grid; gap: 22px; }
-.grid--3 { grid-template-columns: repeat(3, 1fr); }
-
-.advCard { padding: 28px; }
-.advCard__icon { font-size: 30px; margin-bottom: 14px; }
-.advCard h3 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-.advCard p { margin: 0; font-size: 14.5px; }
+/* ---------- преимущества: список с линейными иконками ---------- */
+.featureList { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line); }
+.featureItem { display: flex; gap: 18px; padding: 26px 0; border-bottom: 1px solid var(--line); }
+.featureItem:nth-child(odd) { padding-right: 32px; }
+.featureItem:nth-child(even) { padding-left: 32px; border-left: 1px solid var(--line); }
+.featureItem__icon {
+  flex: none; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--gold);
+}
+.featureItem__icon svg { width: 19px; height: 19px; }
+.featureItem__body h3 { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.featureItem__body p { margin: 0; font-size: 14px; }
 
 /* ---------- master ---------- */
 .master { display: grid; grid-template-columns: .8fr 1.2fr; gap: 48px; align-items: center; }
@@ -193,7 +205,6 @@ ul, ol { padding-left: 1.2em; color: var(--muted); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 980px) {
-  .grid--3 { grid-template-columns: repeat(2, 1fr); }
   .hero__in { grid-template-columns: 1fr; }
   .hero__art { order: -1; }
   .hero__frame { max-width: 300px; }
@@ -208,7 +219,9 @@ ul, ol { padding-left: 1.2em; color: var(--muted); }
     display: flex; position: absolute; top: 76px; left: 0; right: 0; flex-direction: column;
     background: rgba(11,11,13,.98); border-bottom: 1px solid var(--line); padding: 18px 24px; gap: 16px;
   }
-  .grid--3 { grid-template-columns: 1fr; }
+  .featureList { grid-template-columns: 1fr; }
+  .featureItem:nth-child(even) { padding-left: 0; border-left: 0; }
+  .featureItem { padding-right: 0; }
   .fab { display: flex; }
   .hero { padding: 120px 0 60px; }
   .cta { padding: 34px 22px; }
