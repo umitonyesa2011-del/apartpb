@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Портфолио работ — сайты и лендинги</title>
+<meta name="description" content="Портфолио выполненных проектов: сайт коллегии адвокатов НКА, wellness-студия TELO и лендинг посуточной аренды квартир в Санкт-Петербурге.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
+<style>
+  .pf-hero{ padding:64px 0 20px; text-align:center; }
+  .pf-hero__kicker{ display:inline-block; padding:7px 16px; border-radius:100px; font-size:12.5px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase; color:#cfd4ff;
+    background:rgba(124,92,255,.14); border:1px solid rgba(124,92,255,.34); }
+  .pf-hero h1{ margin:22px 0 16px; font-size:clamp(32px,5.4vw,54px); font-weight:800; }
+  .pf-hero p{ max-width:640px; margin:0 auto; color:var(--muted); font-size:clamp(15.5px,1.8vw,18px); line-height:1.62; }
+
+  .pf-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:56px; }
+  .pf-card{ border-radius:var(--radius); border:1px solid var(--stroke); background:var(--panel);
+    overflow:hidden; display:flex; flex-direction:column;
+    transition:transform .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease); }
+  .pf-card:hover{ transform:translateY(-6px); border-color:var(--stroke-2); box-shadow:var(--shadow); }
+  .pf-card__media{ position:relative; aspect-ratio:16/10; overflow:hidden; background:#141830; }
+  .pf-card__media img{ width:100%; height:100%; object-fit:cover; object-position:top;
+    transition:transform .6s var(--ease); }
+  .pf-card:hover .pf-card__media img{ transform:scale(1.06); }
+  .pf-card__tag{ position:absolute; top:14px; left:14px; z-index:2; padding:7px 14px; border-radius:100px;
+    font-size:12px; font-weight:800; color:#0a0c18; letter-spacing:.01em;
+    box-shadow:0 8px 20px -8px rgba(0,0,0,.8); }
+  .pf-card__body{ padding:24px 24px 26px; display:flex; flex-direction:column; flex:1; }
+  .pf-card__title{ font-size:20px; font-weight:800; margin-bottom:10px; }
+  .pf-card__about{ color:var(--muted); font-size:14.5px; line-height:1.62; margin-bottom:16px; }
+  .pf-card__stack{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+  .pf-card__stack span{ padding:6px 12px; border-radius:9px; background:rgba(255,255,255,.055);
+    border:1px solid var(--stroke); font-size:12px; font-weight:700; color:#c8cdf0; }
+  .pf-card__btns{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:auto; }
+  .pf-card__btns .btn{ padding:12px 14px; font-size:13.5px; }
+
+  @media (max-width:1000px){ .pf-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:640px){ .pf-grid{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<!-- ─────────────  ШАПКА  ───────────── -->
+<header class="header" id="header">
+  <div class="wrap header__in">
+    <a href="index.html" class="logo">
+      <span class="logo__mark"></span>
+      <span class="logo__text">Квартиры<b>СПб</b></span>
+    </a>
+    <nav class="nav" id="nav">
+      <a href="index.html#apartments">Квартиры</a>
+      <a href="index.html#calendar">Бронирование</a>
+      <a href="portfolio.html">Портфолио</a>
+      <a href="index.html#contacts">Контакты</a>
+    </nav>
+    <a class="btn btn--ghost header__phone" id="headerPhone" href="tel:+79062557282">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"/></svg>
+      <span>+7 906 255-72-82</span>
+    </a>
+    <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- ─────────────  ГЕРОЙ  ───────────── -->
+<section class="pf-hero wrap">
+  <span class="pf-hero__kicker">Наши работы</span>
+  <h1>Портфолио <span class="grad">выполненных проектов</span></h1>
+  <p>Одностраничные сайты и лендинги под ключ: от идеи и дизайна до вёрстки, форм заявок
+     и интеграции с WhatsApp и картами. Ниже — три последних работы.</p>
+</section>
+
+<!-- ─────────────  ПРОЕКТЫ  ───────────── -->
+<section class="section">
+  <div class="wrap">
+    <div class="pf-grid">
+
+      <article class="pf-card">
+        <div class="pf-card__media">
+          <span class="pf-card__tag" style="background:var(--grad-main)">Посуточная аренда</span>
+          <img src="images/portfolio/apartpb.jpg" alt="Лендинг посуточной аренды квартир КвартирыСПб" loading="lazy">
+        </div>
+        <div class="pf-card__body">
+          <h3 class="pf-card__title">КвартирыСПб</h3>
+          <p class="pf-card__about">Лендинг посуточной аренды квартир в Санкт-Петербурге: каталог из 5 квартир со
+            ссылками на Avito, онлайн-календарь бронирования с расчётом стоимости и заявкой в WhatsApp.</p>
+          <div class="pf-card__stack">
+            <span>HTML/CSS/JS</span><span>Календарь</span><span>WhatsApp-заявка</span>
+          </div>
+          <div class="pf-card__btns">
+            <a class="btn btn--primary" href="index.html">Смотреть сайт</a>
+            <a class="btn btn--outline" href="https://github.com/umitonyesa2011-del/apartpb" target="_blank" rel="noopener">Репозиторий</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="pf-card">
+        <div class="pf-card__media">
+          <span class="pf-card__tag" style="background:linear-gradient(100deg,#d7b26a,#f1e2b8)">Юридические услуги</span>
+          <img src="images/portfolio/nka.jpg" alt="Сайт независимой коллегии адвокатов НКА" loading="lazy">
+        </div>
+        <div class="pf-card__body">
+          <h3 class="pf-card__title">НКА — коллегия адвокатов</h3>
+          <p class="pf-card__about">Сайт независимой коллегии адвокатов в Санкт-Петербурге: арбитражные, экономические
+            и уголовные дела. Строгий премиальный стиль, 3D-анимация в hero-блоке, встроенная карта проезда.</p>
+          <div class="pf-card__stack">
+            <span>HTML/CSS/JS</span><span>Three.js</span><span>Яндекс.Карты</span>
+          </div>
+          <div class="pf-card__btns">
+            <a class="btn btn--primary" href="https://github.com/umitonyesa2011-del/NKA" target="_blank" rel="noopener">Репозиторий</a>
+            <a class="btn btn--outline" href="https://github.com/umitonyesa2011-del/NKA" target="_blank" rel="noopener">Подробнее</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="pf-card">
+        <div class="pf-card__media">
+          <span class="pf-card__tag" style="background:linear-gradient(100deg,#b08d57,#e7cf9a)">Wellness-студия</span>
+          <img src="images/portfolio/telo.jpg" alt="Сайт wellness-студии TELO" loading="lazy">
+        </div>
+        <div class="pf-card__body">
+          <h3 class="pf-card__title">TELO</h3>
+          <p class="pf-card__about">Сайт wellness-студии в Санкт-Петербурге: пилатес на реформере, йога, массаж и уход
+            за телом. Стиль quiet luxury, галерея интерьера с лайтбоксом, запись в WhatsApp.</p>
+          <div class="pf-card__stack">
+            <span>HTML/CSS/JS</span><span>Lightbox-галерея</span><span>WhatsApp-запись</span>
+          </div>
+          <div class="pf-card__btns">
+            <a class="btn btn--primary" href="https://github.com/umitonyesa2011-del/telo" target="_blank" rel="noopener">Репозиторий</a>
+            <a class="btn btn--outline" href="https://github.com/umitonyesa2011-del/telo" target="_blank" rel="noopener">Подробнее</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────  CTA  ───────────── -->
+<section class="section section--alt contacts">
+  <div class="wrap">
+    <div class="cta card">
+      <div class="cta__lines"></div>
+      <div class="cta__in">
+        <h2>Нужен похожий сайт?</h2>
+        <p>Соберу лендинг под ваш бизнес: дизайн, тексты, форма заявки и интеграция с WhatsApp — под ключ.</p>
+        <a class="phone" href="tel:+79062557282">+7 906 255-72-82</a>
+        <div class="cta__btns">
+          <a class="btn btn--primary" href="https://wa.me/79062557282" target="_blank" rel="noopener">Написать в WhatsApp</a>
+          <a class="btn btn--outline" href="index.html">На главную</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap footer__in">
+    <span>© <span id="year"></span> Портфолио · Санкт-Петербург</span>
+    <a href="tel:+79062557282">+7 906 255-72-82</a>
+  </div>
+</footer>
+
+<a class="fab" id="fab" href="tel:+79062557282" aria-label="Позвонить">
+  <svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"/></svg>
+</a>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const header = document.getElementById('header');
+  addEventListener('scroll', () => header.classList.toggle('is-stuck', scrollY > 8), { passive:true });
+
+  const burger = document.getElementById('burger');
+  const nav = document.getElementById('nav');
+  burger.addEventListener('click', () => {
+    burger.classList.toggle('is-open');
+    nav.classList.toggle('is-open');
+  });
+  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    burger.classList.remove('is-open');
+    nav.classList.remove('is-open');
+  }));
+
+  addEventListener('scroll', () => {
+    document.getElementById('fab').style.display = scrollY > 400 ? 'grid' : 'none';
+  }, { passive:true });
+</script>
+</body>
+</html>
