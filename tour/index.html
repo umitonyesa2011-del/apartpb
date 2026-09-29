@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D-экскурсия по помещению</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0c0d0f; --fg:#f4f2ee; --muted:rgba(244,242,238,.68); --accent:#e8b76a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; background:var(--bg); color:var(--fg); overflow:hidden;
+    font-family:Manrope, "Liberation Sans", "DejaVu Sans", Arial, sans-serif; }
+  #stage { position:fixed; inset:0; }
+  canvas { display:block; width:100%; height:100%; }
+  .vignette { position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  .shade { position:fixed; inset:0; pointer-events:none; background:#000; opacity:0; }
+  .brand { position:fixed; top:3.2vh; left:3.2vw; font-size:clamp(11px,1.15vw,22px); letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); display:flex; gap:.8em; align-items:center; }
+  .brand b { color:var(--accent); font-weight:800; }
+  .caption { position:fixed; left:3.2vw; bottom:7vh; max-width:70vw; }
+  .caption .num { font-size:clamp(12px,1.25vw,24px); color:var(--accent); font-weight:800; letter-spacing:.12em; }
+  .caption .txt { font-size:clamp(20px,2.7vw,52px); font-weight:800; line-height:1.1; margin-top:.25em;
+    text-shadow:0 2px 18px rgba(0,0,0,.6); }
+  .progress { position:fixed; left:3.2vw; right:3.2vw; bottom:3.6vh; height:3px; background:rgba(255,255,255,.18);
+    border-radius:2px; cursor:pointer; }
+  .progress i { position:absolute; left:0; top:0; bottom:0; background:var(--accent); border-radius:2px; }
+  .card { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; pointer-events:none; opacity:0; padding:0 16px; }
+  .card .k { font-size:clamp(12px,1.3vw,26px); letter-spacing:.3em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+  .card h1 { font-size:clamp(30px,4.6vw,92px); font-weight:800; line-height:1.05; margin:.35em 0 .3em; }
+  .card p { font-size:clamp(15px,1.7vw,34px); color:var(--muted); }
+  .card .line { width:clamp(40px,6vw,120px); height:3px; background:var(--accent); margin:1.2em auto 0; }
+  .controls { position:fixed; right:3.2vw; bottom:6.5vh; display:flex; gap:8px; }
+  .controls button { width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.3);
+    background:rgba(0,0,0,.35); color:var(--fg); font-size:18px; cursor:pointer; backdrop-filter:blur(6px); }
+  .controls button:hover { border-color:var(--accent); color:var(--accent); }
+  body.render .controls { display:none; }
+  body.render .progress { cursor:default; }
+  @media (max-width:640px) {
+    .caption { left:16px; bottom:13vh; max-width:calc(100vw - 32px); }
+    .brand { left:16px; }
+    .progress { left:16px; right:16px; }
+    .controls { right:16px; bottom:5.5vh; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="vignette"></div>
+<div class="shade" id="shade"></div>
+<div class="brand"><b>3D</b> Экскурсия · Помещение свободного назначения</div>
+<div class="caption" id="caption"><div class="num" id="capNum"></div><div class="txt" id="capTxt"></div></div>
+<div class="card" id="intro">
+  <div class="k">Санкт-Петербург · аренда</div>
+  <h1>Помещение<br>свободного назначения</h1>
+  <p>≈ 73 м² · 50 000 ₽ в месяц</p>
+  <div class="line"></div>
+</div>
+<div class="card" id="outro">
+  <div class="k">Аренда помещения</div>
+  <h1>50 000 ₽ / месяц</h1>
+  <p>685 ₽ за м² · залог 50 000 ₽ · ≈ 73 м²</p>
+  <div class="line"></div>
+</div>
+<div class="progress" id="progress"><i id="bar"></i></div>
+<div class="controls">
+  <button id="prev" aria-label="Назад">&#8592;</button>
+  <button id="play" aria-label="Пауза">&#10074;&#10074;</button>
+  <button id="next" aria-label="Вперёд">&#8594;</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// rect: back wall of the room in the photo, fractions of width/height (x0, y0, x1, y1), y from top.
+// pan / tilt: how far the camera turns while walking in (-1..1).
+const SCENES = [
+  { img:'p01', cap:'Проход между помещениями',            rect:[.40,.28,.92,.68], pan: .10, tilt:-.05 },
+  { img:'p02', cap:'Анфилада комнат',                     rect:[.22,.14,.78,.80], pan: 0,   tilt: 0 },
+  { img:'p03', cap:'Зал с большим окном',                 rect:[.28,.12,.72,.62], pan: .25, tilt: 0 },
+  { img:'p04', cap:'Светлая комната с окном',             rect:[.12,.06,.68,.62], pan: .18, tilt: 0 },
+  { img:'p05', cap:'Помещение с двумя проёмами',          rect:[.12,.06,.88,.72], pan:-.12, tilt: 0 },
+  { img:'p06', cap:'Комната с выводами под санузел',      rect:[.18,.12,.88,.68], pan: .06, tilt:-.08 },
+  { img:'p07', cap:'Входная зона · электрощит',           rect:[.40,.10,.80,.58], pan:-.20, tilt: 0 },
+  { img:'p08', cap:'Проход к коммуникациям',              rect:[.12,.06,.90,.80], pan: .12, tilt: 0 },
+  { img:'p09', cap:'Ниша с инженерными стояками',         rect:[.22,.08,.88,.82], pan: .08, tilt: 0 },
+  { img:'p10', cap:'Коридор · выводы водоснабжения',      rect:[.15,.10,.85,.75], pan:-.15, tilt: 0 },
+  { img:'p11', cap:'Коридор вглубь помещения',            rect:[.25,.25,.65,.62], pan: 0,   tilt:-.05 },
+  { img:'p12', cap:'Внутреннее помещение',                rect:[.06,.06,.72,.60], pan: .22, tilt: 0 },
+  { img:'p13', cap:'Развилка коридора',                   rect:[.10,.06,.90,.70], pan:-.18, tilt: 0 },
+  { img:'p14', cap:'Коридор к выходу',                    rect:[.22,.28,.82,.66], pan: .06, tilt:-.04 },
+  { img:'p15', cap:'Подсобное помещение',                 rect:[.12,.25,.92,.78], pan: .10, tilt:-.06 },
+];
+
+const INTRO = 3.6, SCENE = 5.4, XF = 1.1, OUTRO = 4.4;
+const STEP = SCENE - XF;
+const TOTAL = INTRO + SCENES.length * STEP + XF + OUTRO;
+const HFOV_PHOTO = 78 * Math.PI / 180;   // assumed lens FOV across the long side of the photo
+
+const RENDER = new URLSearchParams(location.search).has('render');
+if (RENDER) document.body.classList.add('render');
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:RENDER });
+renderer.setPixelRatio(RENDER ? 1 : Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x0c0d0f);
+renderer.autoClear = false;
+document.getElementById('stage').appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(50, 16/9, 0.01, 100);
+
+const VERT = `
+  varying vec3 vPos;
+  void main(){ vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
+// Projective texturing: every wall point takes the photo pixel that lies on the ray
+// from the original shooting position, so the view from that point matches the photo exactly.
+const FRAG = `
+  uniform sampler2D tex; uniform vec3 cam0; uniform float W; uniform float opacity; uniform float shade;
+  varying vec3 vPos;
+  void main(){
+    float s = cam0.z / (cam0.z - vPos.z);
+    vec2 p = cam0.xy + (vPos.xy - cam0.xy) * s;
+    vec2 uv = vec2(p.x / W + 0.5, p.y + 0.5);
+    vec3 c = texture2D(tex, clamp(uv, 0.001, 0.999)).rgb;
+    c = pow(c, vec3(0.94)) * 1.04;
+    gl_FragColor = vec4(c * shade, opacity);
+  }`;
+
+function buildScene(def, texture) {
+  const img = texture.image;
+  const W = img.width / img.height, H = 1;
+  const portrait = W < 1;
+  const f = portrait ? (H/2) / Math.tan(HFOV_PHOTO/2) : (W/2) / Math.tan(HFOV_PHOTO/2);
+  const [x0,y0,x1,y1] = def.rect;
+  const P = (fx, fy) => new THREE.Vector3(fx*W - W/2, (1-fy) - 0.5, 0);
+  // the photo was shot from its optical centre, facing straight into the frame
+  const cam0 = new THREE.Vector3(0, 0, f);
+  // Depth of the back wall: its bottom edge has to lie on the floor (bottom edge of the photo).
+  const yb = P(0, y1).y;
+  let t = (cam0.y + 0.5) / Math.max(cam0.y - yb, 1e-3);
+  t = Math.min(Math.max(t, 1.35), 3.5);
+  const back = (fx, fy) => { const p = P(fx, fy); return cam0.clone().add(p.sub(cam0).multiplyScalar(t)); };
+  const F = [P(0,1), P(1,1), P(1,0), P(0,0)];                       // front frame: BL, BR, TR, TL
+  const B = [back(x0,y1), back(x1,y1), back(x1,y0), back(x0,y0)];   // back wall:   BL, BR, TR, TL
+  const quads = [ [B[0],B[1],B[2],B[3]], [F[0],F[1],B[1],B[0]], [B[3],B[2],F[2],F[3]],
+                  [F[0],B[0],B[3],F[3]], [B[1],F[1],F[2],B[2]] ];
+  const pos = [];
+  for (const [a,b,c,d] of quads) for (const v of [a,b,c,a,c,d]) pos.push(v.x, v.y, v.z);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const mat = new THREE.ShaderMaterial({
+    uniforms:{ tex:{value:texture}, cam0:{value:cam0}, W:{value:W}, opacity:{value:1}, shade:{value:1} },
+    vertexShader:VERT, fragmentShader:FRAG, side:THREE.DoubleSide, transparent:true, depthTest:false, depthWrite:false });
+  const scene = new THREE.Scene();
+  scene.add(new THREE.Mesh(geo, mat));
+  const backCenter = B[0].clone().add(B[2]).multiplyScalar(0.5);
+  const photoHFov = portrait ? 2*Math.atan(W/2/f) : HFOV_PHOTO;
+  const depth = cam0.z - backCenter.z;
+  // how far the camera walks in: enough for parallax, not so far that the low-res photo turns to mush
+  const walk = Math.min(0.4 * depth, 0.55 * f) / depth;
+  return { def, scene, mat, cam0, backCenter, depth, walk, W, portrait, photoHFov };
+}
+
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x*x*(3 - 2*x);
+const easeOut = x => 1 - Math.pow(1 - Math.min(Math.max(x,0),1), 2.2);
+
+function placeCamera(S, p) {
+  // p: 0 → shooting position, 1 → end of the walk into the room
+  const k = easeOut(p);
+  const dir = S.backCenter.clone().sub(S.cam0);
+  const pos = S.cam0.clone().add(dir.clone().multiplyScalar(S.walk * k));
+  pos.x += Math.sin(p * Math.PI) * 0.035;
+  pos.y += Math.sin(p * Math.PI * 2) * 0.008;
+  camera.position.copy(pos);
+  const ahead = S.cam0.clone().add(new THREE.Vector3(0, 0, -S.depth));
+  const look = ahead.lerp(S.backCenter, 0.7 * ease(p));
+  look.x += S.def.pan * S.depth * 0.9 * ease(p);
+  look.y += S.def.tilt * S.depth * ease(p);
+  // vertical photos only fit ~half their height into a 16:9 frame, so sweep the gaze from top to bottom
+  if (S.portrait) look.y += Math.tan(0.22 - 0.4 * ease(p)) * S.depth;
+  camera.up.set(0, 1, 0);
+  camera.lookAt(look);
+  camera.rotateZ(Math.sin(p * Math.PI) * 0.006);
+  const aspect = renderer.domElement.width / renderer.domElement.height;
+  camera.aspect = aspect;
+  // horizontal FOV slightly tighter than the photo, so the frame never leaves the picture
+  let hf = S.photoHFov * 0.93 * (1 - 0.05 * k);
+  let vf = 2 * Math.atan(Math.tan(hf/2) / aspect);
+  if (aspect < 1) vf = Math.min(vf, S.portrait ? 1.3 : 0.95);
+  camera.fov = vf * 180 / Math.PI;
+  camera.updateProjectionMatrix();
+}
+
+const built = [];
+const loader = new THREE.TextureLoader();
+function loadAll() {
+  return Promise.all(SCENES.map((def, i) => new Promise(res => {
+    loader.load(`photos/${def.img}.jpg`, tex => {
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      built[i] = buildScene(def, tex); res();
+    });
+  })));
+}
+
+const $ = id => document.getElementById(id);
+function resize() {
+  const w = RENDER ? 1920 : innerWidth, h = RENDER ? 1080 : innerHeight;
+  renderer.setSize(w, h, false);
+}
+
+function renderAt(t) {
+  t = Math.max(0, Math.min(TOTAL, t));
+  renderer.clear();
+  const tScenes = t - INTRO;
+  const layers = [];
+  for (let i = 0; i < built.length; i++) {
+    const start = i * STEP, end = start + SCENE;
+    const last = i === built.length - 1;
+    if (i === 0 && tScenes < 0) { layers.push([i, 0, 1]); continue; }
+    if (tScenes < start || (tScenes > end && !last)) continue;
+    const p = (tScenes - start) / SCENE;
+    let a = 1;
+    if (i > 0 && tScenes < start + XF) a = ease((tScenes - start) / XF);
+    layers.push([i, Math.min(p, 1 + (p - 1) * 0.25), a]);
+  }
+  for (const [i, p, a] of layers) {
+    const S = built[i];
+    placeCamera(S, p);
+    S.mat.uniforms.opacity.value = a;
+    renderer.render(S.scene, camera);
+  }
+  // overlays
+  const top = layers.length ? layers[layers.length - 1][0] : 0;
+  const introA = t < INTRO ? 1 - ease((t - (INTRO - 1.2)) / 1.2) : 0;
+  const outroStart = TOTAL - OUTRO;
+  const outroA = ease((t - outroStart) / 1.2);
+  $('intro').style.opacity = introA;
+  $('outro').style.opacity = outroA;
+  $('shade').style.opacity = Math.max(introA * 0.55, outroA * 0.72, t < 0.8 ? 1 - t / 0.8 : 0);
+  const capStart = INTRO + top * STEP;
+  const capA = Math.min(ease((t - capStart - 0.3) / 0.6), 1 - ease((t - (capStart + SCENE - XF - 0.2)) / 0.5)) * (1 - outroA);
+  $('caption').style.opacity = Math.max(0, capA);
+  $('capNum').textContent = String(top + 1).padStart(2, '0') + ' / ' + SCENES.length;
+  $('capTxt').textContent = SCENES[top].cap;
+  $('bar').style.width = (t / TOTAL * 100) + '%';
+}
+
+window.TOUR = { TOTAL, renderAt, ready:false };
+
+// ---- interactive playback ----
+let clock = 0, playing = true, lastTs = null;
+function tick(ts) {
+  if (lastTs !== null && playing) clock += (ts - lastTs) / 1000;
+  lastTs = ts;
+  if (clock >= TOTAL) clock = 0;
+  renderAt(clock);
+  requestAnimationFrame(tick);
+}
+function jump(dir) {
+  const cur = Math.floor(Math.max(0, clock - INTRO) / STEP);
+  const n = Math.max(0, Math.min(SCENES.length - 1, cur + dir));
+  clock = INTRO + n * STEP + (dir !== 0 && n === 0 && dir < 0 ? -INTRO : 0);
+}
+$('play').onclick = () => { playing = !playing; $('play').innerHTML = playing ? '&#10074;&#10074;' : '&#9654;'; };
+$('prev').onclick = () => jump(-1);
+$('next').onclick = () => jump(1);
+$('progress').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); clock = (e.clientX - r.left) / r.width * TOTAL; };
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') jump(1);
+  else if (e.key === 'ArrowLeft') jump(-1);
+  else if (e.key === ' ') $('play').click();
+});
+addEventListener('resize', resize);
+
+resize();
+loadAll().then(() => {
+  window.TOUR.ready = true;
+  if (!RENDER) requestAnimationFrame(tick); else renderAt(0);
+});
+</script>
+</body>
+</html>
