@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Прогулка по помещению</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0c0d0f; --fg:#f4f2ee; --muted:rgba(244,242,238,.7); --accent:#e8b76a; --glass:rgba(12,13,15,.55); }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; background:var(--bg); color:var(--fg); overflow:hidden; touch-action:none;
+    font-family:Manrope, "Liberation Sans", "DejaVu Sans", Arial, sans-serif; user-select:none; -webkit-user-select:none; }
+  #stage { position:fixed; inset:0; cursor:grab; }
+  #stage.drag { cursor:grabbing; }
+  canvas { display:block; width:100%; height:100%; }
+
+  .panel { position:fixed; top:16px; left:16px; background:var(--glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px 16px; max-width:min(420px, calc(100vw - 92px)); }
+  .panel .k { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:800; }
+  .panel .t { font-size:18px; font-weight:800; margin-top:4px; line-height:1.2; }
+  .panel .s { font-size:13px; color:var(--muted); margin-top:4px; }
+
+  .tools { position:fixed; top:16px; right:16px; display:flex; flex-direction:column; gap:8px; }
+  .btn { width:44px; height:44px; border-radius:12px; border:1px solid rgba(255,255,255,.16); background:var(--glass);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:var(--fg); font-size:20px; line-height:1;
+    display:grid; place-items:center; cursor:pointer; text-decoration:none; }
+  .btn:hover { border-color:var(--accent); color:var(--accent); }
+  .btn svg { width:20px; height:20px; }
+
+  /* Street View-style arrow lying on the floor */
+  .arrow { position:fixed; left:0; top:0; width:110px; height:110px; margin:-55px 0 0 -55px; cursor:pointer;
+    display:none; transform-origin:50% 50%; }
+  .arrow .disc { width:100%; height:100%; border-radius:50%; display:grid; place-items:center;
+    background:radial-gradient(circle, rgba(255,255,255,.28), rgba(255,255,255,.08) 60%, rgba(255,255,255,0) 70%);
+    transform:perspective(420px) rotateX(58deg); transition:transform .15s; }
+  .arrow svg { width:70%; height:70%; filter:drop-shadow(0 3px 6px rgba(0,0,0,.55)); }
+  .arrow:hover .disc { transform:perspective(420px) rotateX(58deg) scale(1.12); }
+  .arrow .lbl { position:absolute; left:50%; top:-8px; transform:translate(-50%,-100%); white-space:nowrap;
+    background:var(--glass); border-radius:8px; padding:5px 10px; font-size:13px; font-weight:600; opacity:0; transition:opacity .15s; pointer-events:none; }
+  .arrow:hover .lbl { opacity:1; }
+  .back { top:auto; left:50%; bottom:112px; margin:0 0 0 -55px; }
+
+  .strip { position:fixed; left:0; right:0; bottom:0; padding:10px 16px 14px; display:flex; gap:8px; overflow-x:auto;
+    background:linear-gradient(to top, rgba(0,0,0,.7), rgba(0,0,0,0)); scrollbar-width:none; }
+  .strip::-webkit-scrollbar { display:none; }
+  .thumb { flex:0 0 auto; width:104px; height:72px; border-radius:10px; overflow:hidden; position:relative; cursor:pointer;
+    border:2px solid transparent; opacity:.72; transition:opacity .15s, border-color .15s; background:#222; }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .thumb span { position:absolute; left:6px; bottom:4px; font-size:11px; font-weight:800; text-shadow:0 1px 4px #000; }
+  .thumb:hover { opacity:1; }
+  .thumb.on { border-color:var(--accent); opacity:1; }
+
+  .hint { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--glass); backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px); border-radius:16px; padding:18px 22px; text-align:center; font-size:15px; line-height:1.6;
+    pointer-events:none; transition:opacity .6s; max-width:calc(100vw - 32px); }
+  .hint b { color:var(--accent); }
+  .hint.off { opacity:0; }
+  .loading { position:fixed; inset:0; display:grid; place-items:center; background:var(--bg); font-size:15px; color:var(--muted); transition:opacity .5s; }
+  .loading.off { opacity:0; pointer-events:none; }
+
+  @media (max-width:640px) {
+    .panel .t { font-size:16px; }
+    .thumb { width:84px; height:58px; }
+    .back { bottom:90px; margin-left:-45px; }
+    .arrow { width:90px; height:90px; margin:-45px 0 0 -45px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div class="panel">
+  <div class="k" id="pNum">Точка 1 из 15</div>
+  <div class="t" id="pCap"></div>
+  <div class="s">Помещение свободного назначения · СПб · ≈73 м² · 50 000 ₽/мес</div>
+</div>
+
+<div class="tools">
+  <button class="btn" id="zin" title="Приблизить">+</button>
+  <button class="btn" id="zout" title="Отдалить">−</button>
+  <button class="btn" id="reset" title="Смотреть прямо">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+  </button>
+  <button class="btn" id="fs" title="Во весь экран">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+  <a class="btn" href="tour.mp4" title="Видео-экскурсия" target="_blank">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+  </a>
+</div>
+
+<div class="arrow" id="fwd">
+  <div class="lbl" id="fwdLbl"></div>
+  <div class="disc"><svg viewBox="0 0 24 24"><path d="M4 16 L12 7 L20 16" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div>
+<div class="arrow back" id="bwd" style="display:block">
+  <div class="lbl" id="bwdLbl"></div>
+  <div class="disc"><svg viewBox="0 0 24 24"><path d="M4 8 L12 17 L20 8" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div>
+
+<div class="strip" id="strip"></div>
+
+<div class="hint" id="hint">
+  <b>Тяните</b>, чтобы осмотреться · <b>колесо</b> — приблизить<br>
+  <b>Стрелка на полу</b> или <b>↑</b> — идти вперёд · <b>↓</b> — назад
+</div>
+<script>
+  if (matchMedia('(pointer: coarse)').matches)
+    document.getElementById('hint').innerHTML =
+      '<b>Ведите пальцем</b>, чтобы осмотреться<br><b>Щипок</b> — приблизить<br><b>Стрелка на полу</b> — идти дальше';
+</script>
+<div class="loading" id="loading">Загружаем помещение…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// The same 15 viewpoints as the video tour (index.html). rect = back wall of the room in the photo.
+const SCENES = [
+  { img:'p01', cap:'Проход между помещениями',       rect:[.40,.28,.92,.68] },
+  { img:'p02', cap:'Анфилада комнат',                rect:[.22,.14,.78,.80] },
+  { img:'p03', cap:'Зал с большим окном',            rect:[.28,.12,.72,.62] },
+  { img:'p04', cap:'Светлая комната с окном',        rect:[.12,.06,.68,.62] },
+  { img:'p05', cap:'Помещение с двумя проёмами',     rect:[.12,.06,.88,.72] },
+  { img:'p06', cap:'Комната с выводами под санузел', rect:[.18,.12,.88,.68] },
+  { img:'p07', cap:'Входная зона · электрощит',      rect:[.40,.10,.80,.58] },
+  { img:'p08', cap:'Проход к коммуникациям',         rect:[.12,.06,.90,.80] },
+  { img:'p09', cap:'Ниша с инженерными стояками',    rect:[.22,.08,.88,.82] },
+  { img:'p10', cap:'Коридор · выводы водоснабжения', rect:[.15,.10,.85,.75] },
+  { img:'p11', cap:'Коридор вглубь помещения',       rect:[.25,.25,.65,.62] },
+  { img:'p12', cap:'Внутреннее помещение',           rect:[.06,.06,.72,.60] },
+  { img:'p13', cap:'Развилка коридора',              rect:[.10,.06,.90,.70] },
+  { img:'p14', cap:'Коридор к выходу',               rect:[.22,.28,.82,.66] },
+  { img:'p15', cap:'Подсобное помещение',            rect:[.12,.25,.92,.78] },
+];
+const HFOV_PHOTO = 78 * Math.PI / 180;   // assumed lens FOV across the long side of the photo
+const MAX_WALK = 0.45;                   // how deep into a room you can step (fraction of its depth)
+const DEG = Math.PI / 180;
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x0c0d0f);
+renderer.autoClear = false;
+const stage = document.getElementById('stage');
+stage.appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(60, 1, 0.01, 200);
+
+const VERT = `
+  varying vec3 vPos;
+  void main(){ vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
+// Projective texturing from the shooting point: the room box shows the photo exactly from there,
+// and real parallax once you step inside.
+const FRAG = `
+  uniform sampler2D tex; uniform vec3 cam0; uniform float W; uniform float opacity;
+  varying vec3 vPos;
+  void main(){
+    float s = cam0.z / (cam0.z - vPos.z);
+    vec2 p = cam0.xy + (vPos.xy - cam0.xy) * s;
+    vec2 uv = vec2(p.x / W + 0.5, p.y + 0.5);
+    vec3 c = texture2D(tex, clamp(uv, 0.001, 0.999)).rgb;
+    c = pow(c, vec3(0.94)) * 1.04;
+    float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+    gl_FragColor = vec4(c, opacity * smoothstep(0.0, 0.015, edge));
+  }`;
+// Where nothing was photographed: a heavily blurred, darkened continuation of the photo.
+const BG_VERT = `
+  varying vec3 vDir;
+  void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
+const BG_FRAG = `
+  uniform sampler2D tex; uniform float hf; uniform float vf; uniform float opacity;
+  varying vec3 vDir;
+  void main(){
+    vec3 d = normalize(vDir);
+    float yaw = atan(d.x, -d.z), pit = asin(clamp(d.y, -1.0, 1.0));
+    vec2 uv = vec2(0.5 + yaw / hf, 0.5 + pit / vf);
+    float out_ = length(max(abs(uv - 0.5) - 0.5, 0.0));
+    vec3 c = texture2D(tex, clamp(uv, 0.0, 1.0)).rgb * 0.42 * (1.0 - smoothstep(0.0, 0.9, out_));
+    gl_FragColor = vec4(c, opacity);
+  }`;
+
+function blurredTexture(img) {
+  const c = document.createElement('canvas');
+  c.width = 16; c.height = Math.max(8, Math.round(16 * img.height / img.width));
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const t = new THREE.CanvasTexture(c);
+  t.minFilter = t.magFilter = THREE.LinearFilter;
+  return t;
+}
+
+function buildScene(def, texture) {
+  const img = texture.image;
+  const W = img.width / img.height, H = 1;
+  const portrait = W < 1;
+  const f = portrait ? (H/2) / Math.tan(HFOV_PHOTO/2) : (W/2) / Math.tan(HFOV_PHOTO/2);
+  const [x0,y0,x1,y1] = def.rect;
+  const P = (fx, fy) => new THREE.Vector3(fx*W - W/2, (1-fy) - 0.5, 0);
+  const cam0 = new THREE.Vector3(0, 0, f);
+  const yb = P(0, y1).y;
+  let t = (cam0.y + 0.5) / Math.max(cam0.y - yb, 1e-3);
+  t = Math.min(Math.max(t, 1.35), 3.5);
+  const back = (fx, fy) => { const p = P(fx, fy); return cam0.clone().add(p.sub(cam0).multiplyScalar(t)); };
+  const F = [P(0,1), P(1,1), P(1,0), P(0,0)];
+  const B = [back(x0,y1), back(x1,y1), back(x1,y0), back(x0,y0)];
+  const quads = [ [B[0],B[1],B[2],B[3]], [F[0],F[1],B[1],B[0]], [B[3],B[2],F[2],F[3]],
+                  [F[0],B[0],B[3],F[3]], [B[1],F[1],F[2],B[2]] ];
+  const pos = [];
+  for (const [a,b,c,d] of quads) for (const v of [a,b,c,a,c,d]) pos.push(v.x, v.y, v.z);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const mat = new THREE.ShaderMaterial({
+    uniforms:{ tex:{value:texture}, cam0:{value:cam0}, W:{value:W}, opacity:{value:1} },
+    vertexShader:VERT, fragmentShader:FRAG, side:THREE.DoubleSide, transparent:true, depthTest:false, depthWrite:false });
+  const photoHFov = portrait ? 2*Math.atan(W/2/f) : HFOV_PHOTO;
+  const photoVFov = portrait ? HFOV_PHOTO : 2*Math.atan(0.5/f);
+  const bgMat = new THREE.ShaderMaterial({
+    uniforms:{ tex:{value:blurredTexture(img)}, hf:{value:photoHFov}, vf:{value:photoVFov}, opacity:{value:1} },
+    vertexShader:BG_VERT, fragmentShader:BG_FRAG, side:THREE.BackSide, transparent:true, depthTest:false, depthWrite:false });
+  const bg = new THREE.Mesh(new THREE.SphereGeometry(60, 48, 24), bgMat);
+  const scene = new THREE.Scene();
+  const room = new THREE.Mesh(geo, mat);
+  bg.renderOrder = 0; room.renderOrder = 1;   // blurred surroundings first, the room on top
+  scene.add(bg);
+  scene.add(room);
+  const backCenter = B[0].clone().add(B[2]).multiplyScalar(0.5);
+  return { def, scene, mat, bg, bgMat, cam0, backCenter, depth: cam0.z - backCenter.z, W, portrait, photoHFov, photoVFov };
+}
+
+// ---------- state ----------
+const built = [];
+const view = { i:0, yaw:0, pitch:0, zoom:1, walk:0 };
+let trans = null;   // { from, to, t0, dur, dir }
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x*x*(3 - 2*x);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// widest view that still stays inside the photo on this screen (phones get a taller, narrower window)
+function baseHFov(S) {
+  const aspect = renderer.domElement.width / renderer.domElement.height;
+  return Math.min(S.photoHFov, 2 * Math.atan(Math.tan(S.photoVFov / 2) * aspect)) * 0.95;
+}
+function limits(S) {
+  const hf = baseHFov(S) / view.zoom;
+  return { yaw: S.photoHFov/2 + 40*DEG, pitch: 45*DEG, hf };
+}
+
+function placeCamera(S, walk, yaw, pitch, zoom) {
+  const dir = S.backCenter.clone().sub(S.cam0);
+  camera.position.copy(S.cam0).add(dir.multiplyScalar(walk));
+  camera.rotation.set(pitch, yaw, 0, 'YXZ');
+  const aspect = renderer.domElement.width / renderer.domElement.height;
+  camera.aspect = aspect;
+  const hf = baseHFov(S) / zoom;
+  let vf = 2 * Math.atan(Math.tan(hf/2) / aspect);
+  vf = Math.min(vf, 100*DEG);
+  camera.fov = vf / DEG;
+  camera.updateProjectionMatrix();
+  S.bg.position.copy(camera.position);
+}
+
+function drawScene(S, opacity) {
+  S.mat.uniforms.opacity.value = opacity;
+  S.bgMat.uniforms.opacity.value = opacity;
+  renderer.render(S.scene, camera);
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const strip = $('strip');
+SCENES.forEach((s, i) => {
+  const d = document.createElement('div');
+  d.className = 'thumb';
+  d.innerHTML = `<img src="photos/${s.img}.jpg" alt=""><span>${i+1}</span>`;
+  d.title = s.cap;
+  d.onclick = () => go(i);
+  strip.appendChild(d);
+});
+function updateUI() {
+  const i = view.i;
+  $('pNum').textContent = `Точка ${i+1} из ${SCENES.length}`;
+  $('pCap').textContent = SCENES[i].cap;
+  [...strip.children].forEach((el, k) => el.classList.toggle('on', k === i));
+  strip.children[i].scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' });
+  $('fwdLbl').textContent = i < SCENES.length - 1 ? `Далее: ${SCENES[i+1].cap}` : '';
+  $('bwdLbl').textContent = i > 0 ? `Назад: ${SCENES[i-1].cap}` : '';
+  $('bwd').style.display = i > 0 ? 'block' : 'none';
+}
+
+function go(to, dir) {
+  if (trans || to === view.i || to < 0 || to >= built.length) return;
+  dismissHint();
+  trans = { from:view.i, to, t0:performance.now(), dur:1100, dir: dir || (to > view.i ? 1 : -1),
+            walk0:view.walk, yaw0:view.yaw, pitch0:view.pitch, zoom0:view.zoom };
+}
+function step(delta) {
+  if (trans) return;
+  const w = view.walk + delta;
+  if (w > MAX_WALK + 1e-6) go(view.i + 1, 1);
+  else if (w < -1e-6) go(view.i - 1, -1);
+  else view.walk = w;
+}
+
+// drag to look
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  drag = { x:e.clientX, y:e.clientY, yaw:view.yaw, pitch:view.pitch, moved:false };
+  stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
+});
+stage.addEventListener('pointermove', e => {
+  if (!drag || trans) return;
+  const S = built[view.i]; if (!S) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 4) { drag.moved = true; dismissHint(); }
+  const k = limits(S).hf / stage.clientWidth;
+  const L = limits(S);
+  view.yaw = clamp(drag.yaw + dx * k, -L.yaw, L.yaw);
+  view.pitch = clamp(drag.pitch + dy * k, -L.pitch, L.pitch);
+});
+const endDrag = () => { drag = null; stage.classList.remove('drag'); };
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', endDrag);
+stage.addEventListener('dblclick', () => step(0.15));
+stage.addEventListener('wheel', e => {
+  e.preventDefault(); dismissHint();
+  view.zoom = clamp(view.zoom * Math.exp(-e.deltaY * 0.0012), 0.8, 2.6);
+}, { passive:false });
+
+// pinch zoom
+const touches = new Map(); let pinch0 = null;
+stage.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') touches.set(e.pointerId, e); });
+stage.addEventListener('pointermove', e => {
+  if (!touches.has(e.pointerId)) return;
+  touches.set(e.pointerId, e);
+  if (touches.size === 2) {
+    const [a, b] = [...touches.values()];
+    const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    if (!pinch0) pinch0 = { d, zoom:view.zoom };
+    view.zoom = clamp(pinch0.zoom * d / pinch0.d, 0.8, 2.6);
+    drag = null;
+  }
+});
+const endTouch = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch0 = null; };
+stage.addEventListener('pointerup', endTouch);
+stage.addEventListener('pointercancel', endTouch);
+
+addEventListener('keydown', e => {
+  const S = built[view.i]; if (!S) return;
+  const L = limits(S);
+  if (e.key === 'ArrowUp' || e.key === 'w') step(0.15);
+  else if (e.key === 'ArrowDown' || e.key === 's') step(-0.15);
+  else if (e.key === 'ArrowLeft' || e.key === 'a') view.yaw = clamp(view.yaw + 8*DEG, -L.yaw, L.yaw);
+  else if (e.key === 'ArrowRight' || e.key === 'd') view.yaw = clamp(view.yaw - 8*DEG, -L.yaw, L.yaw);
+  else if (e.key === '+' || e.key === '=') view.zoom = clamp(view.zoom * 1.2, 0.8, 2.6);
+  else if (e.key === '-') view.zoom = clamp(view.zoom / 1.2, 0.8, 2.6);
+  else return;
+  dismissHint(); e.preventDefault();
+});
+
+$('fwd').onclick = () => go(view.i + 1, 1);
+$('bwd').onclick = () => go(view.i - 1, -1);
+$('zin').onclick = () => view.zoom = clamp(view.zoom * 1.25, 0.8, 2.6);
+$('zout').onclick = () => view.zoom = clamp(view.zoom / 1.25, 0.8, 2.6);
+$('reset').onclick = () => { view.yaw = 0; view.pitch = 0; view.zoom = 1; };
+$('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+
+let hintOff = false;
+function dismissHint() { if (!hintOff) { hintOff = true; $('hint').classList.add('off'); } }
+setTimeout(dismissHint, 7000);
+
+// ---------- loop ----------
+const tmp = new THREE.Vector3();
+function placeArrow(S) {
+  const el = $('fwd');
+  if (view.i >= SCENES.length - 1 || trans) { el.style.display = 'none'; return; }
+  // a spot on the floor a little ahead, in the direction of the room's far wall
+  tmp.copy(camera.position).lerp(S.backCenter, 0.75);
+  tmp.y = -0.47;
+  tmp.project(camera);
+  const x = (tmp.x + 1) / 2 * stage.clientWidth;
+  // keep it clear of the "back" arrow and the thumbnail strip
+  const y = Math.min((1 - tmp.y) / 2 * stage.clientHeight, stage.clientHeight - 250);
+  const ok = tmp.z < 1 && x > 40 && x < stage.clientWidth - 40 && y > 80;
+  el.style.display = ok ? 'block' : 'none';
+  if (ok) el.style.transform = `translate(${x}px, ${y}px)`;
+}
+
+function resize() { renderer.setSize(stage.clientWidth, stage.clientHeight, false); }
+addEventListener('resize', resize);
+
+function frame(now) {
+  renderer.clear();
+  if (trans) {
+    const p = Math.min(1, (now - trans.t0) / trans.dur), e = ease(p);
+    const A = built[trans.from], B = built[trans.to];
+    // leaving: keep walking in (forward) or step back out (backward)
+    const walkA = trans.dir > 0 ? trans.walk0 + (MAX_WALK + 0.25 - trans.walk0) * e : trans.walk0 * (1 - e);
+    placeCamera(A, walkA, trans.yaw0 * (1 - e), trans.pitch0 * (1 - e), trans.zoom0 + (1 - trans.zoom0) * e);
+    drawScene(A, 1);
+    // arriving: forward starts at the doorway, backward starts a bit inside the previous room
+    const walkB = trans.dir > 0 ? 0 : MAX_WALK * 0.5 * (1 - e);
+    placeCamera(B, walkB, 0, 0, trans.dir > 0 ? 0.85 + 0.15 * e : 1);
+    drawScene(B, e);
+    if (p >= 1) {
+      Object.assign(view, { i:trans.to, yaw:0, pitch:0, zoom:1, walk:0 });
+      trans = null; updateUI();
+    }
+  } else {
+    const S = built[view.i];
+    placeCamera(S, view.walk, view.yaw, view.pitch, view.zoom);
+    drawScene(S, 1);
+  }
+  if (!trans) placeArrow(built[view.i]); else $('fwd').style.display = 'none';
+  requestAnimationFrame(frame);
+}
+
+resize();
+const loader = new THREE.TextureLoader();
+Promise.all(SCENES.map((def, i) => new Promise(res => loader.load(`photos/${def.img}.jpg`, tex => {
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  built[i] = buildScene(def, tex); res();
+})))).then(() => {
+  const start = +(new URLSearchParams(location.search).get('p') || 1) - 1;
+  view.i = clamp(start, 0, SCENES.length - 1);
+  updateUI();
+  $('loading').classList.add('off');
+  window.WALK = { go, step, view, ready:true };
+  requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>
